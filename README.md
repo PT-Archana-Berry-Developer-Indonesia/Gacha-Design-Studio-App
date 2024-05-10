@@ -21,3 +21,6 @@ Game webview ini masih menimbulkan banyak bugs...
 ## Bahasa pemrograman yang dipakai
 Tolong diubah ke kotlin!
 <img src="archanaberry/Kotlin.png" alt="Menggunakan kotlin sebagai program utama" width="192" height="108">
+
+## Informasi 
+Kami akan segera membuat ulang project ini dengan rancangan yang benar.
