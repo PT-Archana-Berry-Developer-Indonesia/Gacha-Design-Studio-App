@@ -26,4 +26,4 @@ Tolong diperbaiki bug dari kotlin nya!
 Kami akan segera membuat ulang project ini dengan rancangan yang benar.
 
 ## Terimakasih untuk:
-!(lunime)[archanaberry/lunime.svg]
+![archanaberry/lunime.svg](lunime credits arts (open source but don't forget to remember her :>))
