@@ -1,6 +1,7 @@
 # Gacha-Design-Studio-App
 Browser game semi-online khusus android untuk Gacha Design Studio dibuat oleh Lunime Fanmade (Penggemar Lunime)
 
+![Archana Berry Developer Game](archanaberry/archanaberry.png)
 ![Gacha Desing Studio](archanaberry/icon.png)
 
 # Fitur Gacha Design Studio webview
