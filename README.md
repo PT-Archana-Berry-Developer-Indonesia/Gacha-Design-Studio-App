@@ -20,7 +20,7 @@ Game webview ini masih menimbulkan banyak bugs...
 
 ## Bahasa pemrograman yang dipakai
 Tolong diperbaiki bug dari kotlin nya!
-<img src="archanaberry/Java.png" alt="Menggunakan java sebagai program sekunder" width="192" height="108">
+<img src="archanaberry/Java.png" alt="Menggunakan java sebagai program sekunder" width="131.9" height="91.1">
 <img src="archanaberry/Kotlin.png" alt="Menggunakan kotlin sebagai program utama" width="192" height="108">
 
 ## Informasi 
