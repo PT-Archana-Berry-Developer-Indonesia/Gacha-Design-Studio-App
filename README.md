@@ -19,8 +19,11 @@ Game webview ini masih menimbulkan banyak bugs...
 | Responsif                 | Merespons perubahan orientasi dan ukuran layar perangkat Android untuk tampilan yang optimal.                   | ✅ |
 
 ## Bahasa pemrograman yang dipakai
-Tolong diubah ke kotlin!
+Tolong diperbaiki bug dari kotlin nya!
 <img src="archanaberry/Kotlin.png" alt="Menggunakan kotlin sebagai program utama" width="192" height="108">
 
 ## Informasi 
 Kami akan segera membuat ulang project ini dengan rancangan yang benar.
+
+## Terimakasih untuk:
+!(lunime)[archanaberry/lunime.svg]
