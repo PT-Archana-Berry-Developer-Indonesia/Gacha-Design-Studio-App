@@ -26,6 +26,7 @@ Game webview ini masih menimbulkan banyak bugs...
 | Keluar dengan konfirmasi dua kali klik      | Ketuk dua kali agar aplikasi dapat dikonfirmasi agar aman untuk keluar dari gane agar tidak mereset sesi game.         | ✅ |
 | FullScreen                 | Merespons layar penuh untuk semua device baik ponsel atau tablet atau komputer PC.                   | ❌ |
 | Responsif                 | Merespons perubahan orientasi dan ukuran layar perangkat Android untuk tampilan yang optimal.                   | ✅ |
+| Indikator pengunduhan, pengekstrakan sumber daya         | [BUG!!!] Untuk mengetahui progres pemasangan sumber daya game GDS agar tahu berapa lama dan berapa persen.       | ❌ |
 
 ## Bahasa pemrograman yang dipakai
 * Tolong diperbaiki bug dari kotlin nya!
