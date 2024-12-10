@@ -21,6 +21,7 @@ Game webview ini masih menimbulkan banyak bugs...
 | Tampilan WebView          | Memuat game Gacha Design Studio menggunakan WebView di dalam aplikasi Android.                                  | ✅ |
 | Alert Custom              | Menampilkan pesan alert khusus dengan judul besar dan pesan kecil, serta opsi untuk menyalin teks ke papan klip. | ✅ |
 | Navigasi Mundur           | Memungkinkan pengguna untuk mundur ke halaman sebelumnya saat menekan tombol kembali di perangkat Android.       | ✅ |
+| Mundurkan halaman bingkai (frame content) pakai tombol kembali        | Memungkinkan pengguna untuk mundur frame atau keluarkan window di game GDS pakai tombol back atau esc       | ❌ |
 | Mengunduh resource game    | Mengunduh sumber daya dengan indikator di dialog box dan juga di notifikasi.             | ❌ |
 | Keluar dengan konfirmasi dua kali klik      | Ketuk dua kali agar aplikasi dapat dikonfirmasi agar aman untuk keluar dari gane agar tidak mereset sesi game.         | ✅ |
 | FullScreen                 | Merespons layar penuh untuk semua device baik ponsel atau tablet atau komputer PC.                   | ❌ |
