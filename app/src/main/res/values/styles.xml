@@ -1,0 +1,31 @@
+<resources>
+    <!-- Tema dasar terang -->
+    <style name="AppTheme.Light" parent="Theme.AppCompat.Light.NoActionBar">
+        <!-- Tanpa ActionBar -->
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <!-- Fullscreen -->
+        <item name="android:windowFullscreen">true</item>
+        <!-- Warna status bar dan navigasi transparan -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <!-- Dukungan untuk tampilan dengan layar potongan -->
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+        <item name="android:windowFullscreen">true</item>
+    </style>
+
+    <!-- Tema dasar gelap -->
+    <style name="AppTheme.Dark" parent="Theme.AppCompat">
+        <!-- Tanpa ActionBar -->
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <!-- Fullscreen -->
+        <item name="android:windowFullscreen">true</item>
+        <!-- Warna status bar dan navigasi transparan -->
+        <item name="android:statusBarColor">@android:color/black</item>
+        <item name="android:navigationBarColor">@android:color/black</item>
+        <!-- Dukungan untuk tampilan dengan layar potongan -->
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+        <item name="android:windowFullscreen">true</item>
+    </style>
+</resources>

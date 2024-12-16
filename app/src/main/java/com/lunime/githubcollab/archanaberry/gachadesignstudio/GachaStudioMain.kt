@@ -19,6 +19,7 @@ import android.provider.Settings
 import android.util.Log
 import android.view.KeyEvent
 import android.view.View
+import android.view.Window
 import android.view.WindowManager
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
@@ -33,9 +34,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 
 import org.apache.commons.io.FileUtils
-import org.w3c.dom.Document
-import org.w3c.dom.Element
-import org.w3c.dom.NodeList
+import org.json.JSONObject
 
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
@@ -57,51 +56,106 @@ import javax.xml.transform.TransformerFactory
 import javax.xml.transform.dom.DOMSource
 import javax.xml.transform.stream.StreamResult
 
+import org.w3c.dom.Element
+
+import android.webkit.MimeTypeMap
+
+import androidx.core.content.ContextCompat
+
+import android.view.WindowInsets
+import android.view.WindowInsetsController
+
+import android.os.Handler
+import android.os.Looper
+
 class GachaStudioMain : Activity() {
 
-    private val PERMISSION_REQUEST_CODE = 1
+    // Constants
     private val DOWNLOAD_REQUEST_CODE = 2
-    private val APP_FOLDER = "/"
+    private val APP_FOLDER = "/Lunime"
 
+    // File paths and other variables
     private var CONFIG_FILE_PATH: String? = null
     private var TEMP_DIR_PATH: String? = null
     private var ZIP_FILE_PATH: String? = null
     private var EXTRACTED_DIR_PATH: String? = null
     private var SOURCE_DIR_PATH: String? = null
     private var DEST_DIR_PATH: String? = null
+    private var MANIFEST_RESOURCE: String? = null
 
+    // UI components
     private var progressDialog: AlertDialog? = null
     private var progressBar: ProgressBar? = null
-
     private var remoteViews: RemoteViews? = null
     private var builder: NotificationCompat.Builder? = null
     private var notificationManager: NotificationManagerCompat? = null
 
-    private var webView: WebView? = null
-    private var backPressedTime: Long = 0
-    private val PRESS_BACK_INTERVAL = 2000 // 2 detik
+    // URLs
+    private val PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.lunime.githubcollab.archanaberry.gachadesignstudio"
+    private val MANIFEST_URL = "https://raw.githubusercontent.com/archanaberry/Gacha-Design-Studio/DL/manifest.json"
+    private val RESOURCE_URL = "https://github.com/archanaberry/Gacha-Design-Studio/archive/refs/heads/DL.zip"
 
+    // WebView and back press logic
+    private var backPressedTime: Long = 0
+    private val PRESS_BACK_INTERVAL = 2000 // 2 seconds
+    
+    private val REQUEST_CODE_FILE_PICK = 100
+    private val PERMISSION_REQUEST_CODE = 1
+    
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+        
+        // GachaStudioMain.kt
+        // Deteksi direktori dinamis
+        val baseDir = detectDynamicDirectory()
 
         // Inisialisasi path
-        CONFIG_FILE_PATH = getExternalFilesDir(null)?.absolutePath
-                ?.plus(APP_FOLDER)?.plus("/data/data.xml")
-        TEMP_DIR_PATH = getExternalFilesDir(null)?.absolutePath
-                ?.plus(APP_FOLDER)?.plus("/.temp")
+        CONFIG_FILE_PATH = baseDir.plus(APP_FOLDER).plus("/data/data.xml")
+        TEMP_DIR_PATH = baseDir.plus(APP_FOLDER).plus("/.temp")
         ZIP_FILE_PATH = TEMP_DIR_PATH?.plus("/DL.zip")
         EXTRACTED_DIR_PATH = TEMP_DIR_PATH?.plus("/")
         SOURCE_DIR_PATH = EXTRACTED_DIR_PATH?.plus("Gacha-Design-Studio-DL/")
-        DEST_DIR_PATH = getExternalFilesDir(null)?.absolutePath
-                ?.plus(APP_FOLDER)?.plus("/")
-
+        MANIFEST_RESOURCE = baseDir.plus(APP_FOLDER).plus("/manifest.json")
+        DEST_DIR_PATH = baseDir.plus(APP_FOLDER).plus("/")
+        
+        
+        
+        super.onCreate(savedInstanceState)
+        
+        setContentView(R.layout.gachastudio_welcome)
+        
         val agreementAccepted = isAgreementAccepted()
-        if (agreementAccepted) {
-            loadWebViewContent()
-        } else {
-            showWelcomeDialog()
-        }
+
+if (agreementAccepted) {
+    // Periksa apakah pembaruan diperlukan sebelum masuk ke GachaStudio
+    if (checkForUpdates()) {
+        // Jika pembaruan diperlukan, tampilkan dialog pembaruan
+        showUpdateDialog()
+    } else {
+        // Jika tidak ada pembaruan, lanjutkan ke GachaStudio
+        openGachaDesignStudio()
     }
+} else {
+    // Jika perjanjian belum diterima, tampilkan dialog sambutan
+    showWelcomeDialog()
+	}
+}
+    
+    private fun openGachaDesignStudio() {
+    val intent = Intent(this, GachaStudio::class.java)
+    startActivity(intent)
+    finish() // Tutup aktivitas saat ini
+}
+
+        // Fungsi untuk mendeteksi direktori dinamis
+    private fun detectDynamicDirectory(): String {
+    // Deteksi apakah pengguna adalah user pertama (0) atau lainnya
+    val userId = android.os.Process.myUserHandle().hashCode() // Unik untuk tiap pengguna
+    return if (userId == 0) {
+        "/storage/emulated/0"
+    } else {
+        "/storage/emulated/$userId"
+    }
+}
 
     private fun isAgreementAccepted(): Boolean {
         return try {
@@ -159,111 +213,14 @@ class GachaStudioMain : Activity() {
         }
     }
 
-    @SuppressLint("SetJavaScriptEnabled")
-    private fun loadWebViewContent() {
-
-        // Menjadikan activity fullscreen
-        window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN)
-
-        setContentView(R.layout.gachastudio_main)
-
-        webView = findViewById(R.id.web)
-
-        webView?.settings?.javaScriptEnabled = true
-        webView?.settings?.allowContentAccess = true
-        webView?.settings?.allowFileAccess = true
-
-        // Autoplay untuk audio
-        webView?.settings?.mediaPlaybackRequiresUserGesture = false
-
-        webView?.webViewClient = object : WebViewClient() {
-		override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
-		return false
-		}
-		}
-
-        // Mendapatkan path ke direktori files di external storage
-        val externalFilesDir = getExternalFilesDir(null)
-        externalFilesDir?.let { dir ->
-            val htmlFilePath = dir.absolutePath + "/mainmenu.html"
-            webView?.loadUrl("file:///$htmlFilePath")
-
-            // Menampilkan pesan alert
-            webView?.webChromeClient = object : android.webkit.WebChromeClient() {
-                override fun onJsAlert(view: WebView?, url: String?, message: String?, result: android.webkit.JsResult?): Boolean {
-                    val builder = AlertDialog.Builder(this@GachaStudioMain)
-                    builder.setTitle("Gacha Design Studio Berpesan!")
-                            .setMessage(message)
-                            .setPositiveButton("Salin ke Papan Klip") { dialog, id ->
-                                val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                val clip = ClipData.newPlainText("Pesan", message)
-                                clipboard.setPrimaryClip(clip)
-                                Toast.makeText(this@GachaStudioMain, "Pesan disalin ke papan klip", Toast.LENGTH_SHORT).show()
-                                result?.confirm() // Ini perlu untuk mengkonfirmasi alert
-                            }
-                            .setNegativeButton("Oke") { dialog, id ->
-                                dialog.dismiss()
-                                result?.confirm() // Ini perlu untuk mengkonfirmasi alert
-                            }
-                    val dialog = builder.create()
-                    dialog.setCancelable(false)
-                    dialog.setCanceledOnTouchOutside(false)
-                    dialog.show()
-                    return true
-                }
-            }
-        }
-
-        // Sembunyikan tombol navigasi
-        webView?.systemUiVisibility = (View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                or View.SYSTEM_UI_FLAG_FULLSCREEN
-                or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY)
-    }
-
-    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        if (keyCode == KeyEvent.KEYCODE_BACK) {
-            if (event?.action == KeyEvent.ACTION_DOWN) {
-                if (webView?.canGoBack() == true) {
-                    webView?.goBack()
-                } else {
-                    exitApp()
-                }
-                return true
-            }
-        }
-        return super.onKeyDown(keyCode, event)
-    }
-
-    private fun exitApp() {
-        val currentTime = System.currentTimeMillis()
-        if (currentTime - backPressedTime > PRESS_BACK_INTERVAL) {
-            backPressedTime = currentTime
-            Toast.makeText(this, "Tekan dua kali lagi untuk keluar dari game!", Toast.LENGTH_SHORT).show()
-            Thread {
-                try {
-                    Thread.sleep(3000) // Tunggu 3 detik
-                    backPressedTime = 0
-                } catch (e: InterruptedException) {
-                    e.printStackTrace()
-                }
-            }.start()
-        } else {
-            finish()
-            // force close aplikasi
-            System.exit(0)
-        }
-    }
-
-    // Method untuk menampilkan dialog selamat datang
-    private fun showWelcomeDialog() {
+        private fun showWelcomeDialog() {
         val builder = AlertDialog.Builder(this)
         builder.setTitle("Selamat Datang di Gacha Design Studio!")
         builder.setMessage(
-                "Gacha Design Studio hadir dengan bebas berkreasi membuat karakter Gacha sesuka mu dengan dukungan kustomisasi penuh.\n\nApakah kamu ingin memainkan nya?\nKalau iya tolong pilih setuju untuk mengizinkan akses penyimpanan dan unduh sumber daya tambahan sekitar 70Mb an.\n\n! Jika tidak setuju maka game ini keluar !\n\n\n\n\nGacha Design Studio ini dibuat olah para penggemar Lunime")
-        builder.setPositiveButton("Setuju") { dialog, which ->
+            "Gacha Design Studio hadir dengan bebas berkreasi membuat karakter Gacha sesuka mu dengan dukungan kustomisasi penuh.\n\nApakah kamu ingin memainkan nya?\nKalau iya tolong pilih setuju untuk mengizinkan akses penyimpanan dan unduh sumber daya tambahan sekitar 70Mb an.\n\n! Jika tidak setuju maka game ini keluar !\n\n\n\n\nGacha Design Studio ini dibuat olah para penggemar Lunime")
+        builder.setPositiveButton("Setuju") {
+            dialog,
+            which ->
             dialog.dismiss()
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 requestStoragePermission()
@@ -272,7 +229,9 @@ class GachaStudioMain : Activity() {
             }
         }
 
-        builder.setNegativeButton("Tidak Setuju") { dialog, which ->
+        builder.setNegativeButton("Tidak Setuju") {
+            dialog,
+            which ->
             dialog.dismiss()
             finish()
         }
@@ -282,8 +241,25 @@ class GachaStudioMain : Activity() {
 
     // Method untuk meminta izin akses penyimpanan
     private fun requestStoragePermission() {
-        ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
-                PERMISSION_REQUEST_CODE)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                if (!Environment.isExternalStorageManager()) {
+                    val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+                    intent.data = Uri.parse("package:$packageName")
+                    startActivityForResult(intent, PERMISSION_REQUEST_CODE)
+                } else {
+                    downloadResources()
+                }
+            } else {
+                if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                    ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), PERMISSION_REQUEST_CODE)
+                } else {
+                    downloadResources()
+                }
+            }
+        } else {
+            downloadResources()
+        }
     }
 
     // Method untuk memulai unduhan sumber daya tambahan
@@ -292,7 +268,7 @@ class GachaStudioMain : Activity() {
         val dialogView = layoutInflater.inflate(R.layout.dialog_progress, null)
         progressBar = dialogView.findViewById(R.id.progressBar)
         progressDialog?.setView(dialogView)
-        progressDialog?.setTitle("Sedang mengunduh sumber daya tambahan...")
+        progressDialog?.setTitle("Sedang mengunduh sumber daya tambahan... :>")
         progressDialog?.setCancelable(false)
         progressDialog?.setCanceledOnTouchOutside(false)
         progressDialog?.show()
@@ -300,11 +276,11 @@ class GachaStudioMain : Activity() {
     }
 
     // AsyncTask untuk mengunduh sumber daya tambahan
-    private inner class DownloadResourcesTask : AsyncTask<Void, Int, Boolean>() {
+    private inner class DownloadResourcesTask: AsyncTask < Void, Int, Boolean > () {
 
         override fun doInBackground(vararg voids: Void): Boolean {
             return try {
-                val url = URL("https://github.com/archanaberry/Gacha-Design-Studio/archive/refs/heads/DL.zip")
+                val url = URL(RESOURCE_URL)
                 val connection = url.openConnection() as HttpURLConnection
                 connection.connect()
 
@@ -326,7 +302,9 @@ class GachaStudioMain : Activity() {
                 val data = ByteArray(1024)
                 var total: Long = 0
                 var count: Int
-                while (input.read(data).also { count = it } != -1) {
+                while (input.read(data).also {
+                        count = it
+                    } != -1) {
                     total += count.toLong()
                     publishProgress((total * 100 / fileLength).toInt())
                     output.write(data, 0, count)
@@ -347,10 +325,12 @@ class GachaStudioMain : Activity() {
             }
         }
 
-        override fun onProgressUpdate(vararg values: Int?) {
-            super.onProgressUpdate(*values)
-            progressDialog?.setTitle("Sedang mengekstrak sumber daya tambahan...")
-            values[0]?.let { progressBar?.progress = it }
+        override fun onProgressUpdate(vararg values: Int ? ) {
+            super.onProgressUpdate( * values)
+            progressDialog?.setTitle("Sedang mengekstrak sumber daya tambahan... :>")
+            values[0]?.let {
+                progressBar?.progress = it
+            }
         }
 
         override fun onPostExecute(success: Boolean) {
@@ -359,19 +339,23 @@ class GachaStudioMain : Activity() {
             if (success) {
                 val builder = AlertDialog.Builder(this@GachaStudioMain)
                 builder.setTitle("Unduhan Berhasil")
-                builder.setMessage("Sumber daya sudah berhasil diekstrak!")
-                builder.setPositiveButton("OK") { dialog, which ->
+                builder.setMessage("Sumber daya sudah berhasil diekstrak! O wO")
+                builder.setPositiveButton("OK") {
+                    dialog,
+                    which ->
                     dialog.dismiss()
                     setAgreementAccepted(true)
-                    loadWebViewContent()
+                    openGachaDesignStudio()
                 }
                 builder.setCancelable(false)
                 builder.show()
             } else {
                 val builder = AlertDialog.Builder(this@GachaStudioMain)
                 builder.setTitle("Unduhan Gagal")
-                builder.setMessage("Maaf, unduhan gagal. Silakan coba lagi nanti.")
-                builder.setPositiveButton("OK") { dialog, which ->
+                builder.setMessage("Maaf, unduhan gagal. Silakan coba lagi nanti T vT.")
+                builder.setPositiveButton("OK") {
+                    dialog,
+                    which ->
                     dialog.dismiss()
                     finish()
                 }
@@ -381,14 +365,14 @@ class GachaStudioMain : Activity() {
         }
     }
 
-    private fun unzip(zipFilePath: String?, destDirectory: String?) {
+    private fun unzip(zipFilePath: String ? , destDirectory : String ? ) {
         try {
             val destDir = File(destDirectory)
             if (!destDir.exists()) {
                 destDir.mkdirs()
             }
             val zipIn = ZipInputStream(FileInputStream(zipFilePath))
-            var entry: ZipEntry? = zipIn.nextEntry
+            var entry: ZipEntry ? = zipIn.nextEntry
             while (entry != null) {
                 val filePath = destDirectory + File.separator + entry.name
                 if (!entry.isDirectory) {
@@ -411,7 +395,9 @@ class GachaStudioMain : Activity() {
             val bos = BufferedOutputStream(FileOutputStream(filePath))
             val bytesIn = ByteArray(4096)
             var read: Int
-            while (zipIn.read(bytesIn).also { read = it } != -1) {
+            while (zipIn.read(bytesIn).also {
+                    read = it
+                } != -1) {
                 bos.write(bytesIn, 0, read)
             }
             bos.close()
@@ -424,17 +410,33 @@ class GachaStudioMain : Activity() {
         try {
             val srcDir = File(srcDirPath)
             val destDir = File(destDirPath)
+
+            // Pastikan direktori tujuan sudah ada
             if (!destDir.exists()) {
                 destDir.mkdirs()
             }
 
-            FileUtils.copyDirectory(srcDir, destDir)
+            // Salin semua file dan direktori dari srcDir ke destDir
+            srcDir.walkTopDown().forEach {
+                file ->
+                    val relativePath = file.relativeTo(srcDir)
+                val destFile = File(destDir, relativePath.path)
+                if (file.isDirectory) {
+                    destFile.mkdirs()
+                } else {
+                    file.copyTo(destFile, overwrite = true)
+                }
+            }
 
-            FileUtils.deleteDirectory(srcDir)
+            // Hapus direktori sumber setelah selesai menyalin
+            if (srcDir.exists()) {
+                FileUtils.deleteDirectory(srcDir)
+            }
         } catch (e: IOException) {
             e.printStackTrace()
         }
     }
+
 
     private fun deleteTempDirectory() {
         try {
@@ -445,8 +447,115 @@ class GachaStudioMain : Activity() {
         }
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>,
-                                            grantResults: IntArray) {
+    ///
+    private fun checkForUpdates(): Boolean {
+    // Membaca manifest lokal
+    val localManifestFile = File(MANIFEST_RESOURCE)
+    if (localManifestFile.exists()) {
+        val localManifest = JSONObject(localManifestFile.readText())
+        val remoteManifest = getRemoteManifest()
+
+        // Cek jika manifest remote berhasil diambil
+        if (remoteManifest != null) {
+            val localAppVer = localManifest.getString("appver")
+            val localVersion = localManifest.getString("version")
+            val remoteAppVer = remoteManifest.getString("appver")
+            val remoteVersion = remoteManifest.getString("version")
+
+            // Bandingkan versi aplikasi (appver)
+            if (compareVersions(remoteAppVer, localAppVer) > 0) {
+                showUpdateDialog()
+                return true  // Pembaruan aplikasi diperlukan
+            } else if (compareVersions(remoteAppVer, localAppVer) < 0) {
+                showDowngradeDialog()
+                return false  // Tidak perlu pembaruan, tetapi downgrade diperlukan
+            }
+
+            // Bandingkan versi sumber daya (version)
+            if (compareVersions(remoteVersion, localVersion) > 0) {
+                showResourceUpdateDialog()
+                return true  // Pembaruan sumber daya diperlukan
+            }
+        }
+    }
+    return false  // Tidak ada pembaruan
+}
+
+private fun getRemoteManifest(): JSONObject? {
+    return try {
+        val url = URL(MANIFEST_URL)
+        val connection = url.openConnection() as HttpURLConnection
+        connection.connect()
+
+        val inputStream = connection.inputStream
+        val content = inputStream.readBytes().toString(Charsets.UTF_8)
+        JSONObject(content)
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
+}
+
+private fun compareVersions(version1: String, version2: String): Int {
+    val order = mapOf("alpha" to 1, "beta" to 2, "stable" to 3, "unstable" to 4)
+    val parts1 = version1.split("_")
+    val parts2 = version2.split("_")
+    val num1 = parts1[0].toDouble()
+    val num2 = parts2[0].toDouble()
+    val type1 = order[parts1[1]] ?: 0  // Pastikan type1 tidak null
+    val type2 = order[parts2[1]] ?: 0  // Pastikan type2 tidak null
+
+    return when {
+        num1 > num2 -> 1
+        num1 < num2 -> -1
+        else -> type1.compareTo(type2)  // type1 dan type2 sekarang tidak nullable
+    }
+}
+
+private fun showUpdateDialog() {
+    AlertDialog.Builder(this)
+        .setTitle("Gacha Design Studio")
+        .setMessage("Gacha Design Studio butuh update aplikasi. Apakah Anda ingin mengupdate nya di Play Store? ｡⁠◕⁠‿⁠◕⁠｡")
+        .setPositiveButton("Sekarang!") { _, _ ->
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(PLAY_STORE_URL))
+            startActivity(intent)
+            finish()
+        }
+        .setNegativeButton("Nanti", null)
+        .show()
+}
+
+private fun showDowngradeDialog() {
+    AlertDialog.Builder(this)
+        .setTitle("Gacha Design Studio")
+        .setMessage("Versi aplikasi lebih tinggi dari versi yang diunduh. Apakah Anda ingin mengunduh versi lama? T' nT")
+        .setPositiveButton("Sekarang!") { _, _ ->
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(PLAY_STORE_URL))
+            startActivity(intent)
+            finish()
+        }
+        .setNegativeButton("Nanti", null)
+        .show()
+}
+
+private fun showResourceUpdateDialog() {
+    AlertDialog.Builder(this)
+        .setTitle("Gacha Design Studio")
+        .setMessage("Sumber daya Gacha Design Studio telah diperbarui. Apakah Anda ingin mengunduhnya? :3")
+        .setPositiveButton("Sekarang!") { _, _ ->
+            downloadResources()
+        }
+        .setNegativeButton("Nanti", null)
+        .show()
+}
+    ///
+    
+    //3
+    
+    //3
+    
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array < String > ,
+        grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == PERMISSION_REQUEST_CODE) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -455,15 +564,19 @@ class GachaStudioMain : Activity() {
                 val builder = AlertDialog.Builder(this)
                 builder.setTitle("Izin Diperlukan")
                 builder.setMessage(
-                    "Aplikasi memerlukan izin akses penyimpanan untuk melanjutkan. Izinkan akses penyimpanan melalui Pengaturan?")
-                builder.setPositiveButton("OK") { dialogInterface, i ->
+                    "Game ini memerlukan izin akses penyimpanan untuk melanjutkan. Izinkan dong akses penyimpanan nya melalui Pengaturan nya?, agar game ini bisa berjalan :v")
+                builder.setPositiveButton("OK") {
+                    dialogInterface,
+                    i ->
                     val intent = Intent()
                     intent.action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
                     val uri = Uri.fromParts("package", packageName, null)
                     intent.data = uri
                     startActivityForResult(intent, DOWNLOAD_REQUEST_CODE)
                 }
-                builder.setNegativeButton("Tidak") { dialogInterface, i ->
+                builder.setNegativeButton("Tidak") {
+                    dialogInterface,
+                    i ->
                     finish()
                 }
                 builder.setCancelable(false)
@@ -472,14 +585,16 @@ class GachaStudioMain : Activity() {
         }
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent ? ) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == DOWNLOAD_REQUEST_CODE) {
-            if (ActivityCompat.checkSelfPermission(this,
-                            Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
-                downloadResources()
-            } else {
-                finish()
+        if (requestCode == PERMISSION_REQUEST_CODE) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                if (Environment.isExternalStorageManager()) {
+                    downloadResources()
+                } else {
+                    Toast.makeText(this, "Kok gak diizinin?, jika ditolak game nya tidak dapat melanjutkan nya TwT.", Toast.LENGTH_SHORT).show()
+                    finish()
+                }
             }
         }
     }
