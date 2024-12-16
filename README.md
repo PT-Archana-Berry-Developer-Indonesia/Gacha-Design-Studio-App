@@ -34,6 +34,8 @@ Game webview ini masih menimbulkan banyak bugs...
 | Berbagi server studio atau Menerima klien studio dari saya ke teman dan ke teman lainnya via wlan0 (hotspot/wifi rumah (server kecil kecilan))               | Merespons server dan klien untuk melalukan berbagi studiospaces kepada teman melalui wlan0 dengan IPv4 (IP versi 4) menggunakan websocket untuk menjamin real time tiap pergerakan.              | ❌ |
 | Responsif                 | Merespons perubahan orientasi dan ukuran layar perangkat Android untuk tampilan yang optimal.                   | ✅ |
 | Indikator pengunduhan, pengekstrakan sumber daya         | [BUG!!!] Untuk mengetahui progres pemasangan sumber daya game GDS agar tahu berapa lama dan berapa persen.       | ❌ |
+| Terjemahkan secara dinamis dengan bahasa sistem (Menggunakan library ( ![TransVar - Translator Variable](https://github.com/archanaberry/transvar) )                | Merespons perubahan bahasa menyesuaikan dengan bahasa lokalisasi sistem yang sedang digunakan berlangsung secara menyeluruh baik MainActivity dan Webview beserta html5 nya.              | ❌ |
+| Archana Berry dan Lunime Logger Report (GachaStudioLogger.kt)                | Merespons melaporkan menjalankan game sekaligus mendebug dan melaporkan kode kesalahan dengan mudah ke pengembang ku, berfungsi baik kode inspeksi html5 web ataupun log kode aplikasi tiap berjalan (MainActivity), Peran tipe log dari Archana Berry sebagai Analisis dan Lunime sebagai Error Kerusakan !.               | ✅ |
 
 ## Bahasa pemrograman yang dipakai
 * Tolong diperbaiki bug dari kotlin nya!
