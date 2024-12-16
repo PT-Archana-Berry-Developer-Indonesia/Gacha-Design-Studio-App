@@ -114,7 +114,7 @@ class GachaStudio : AppCompatActivity() {
         } else {
             GachaStudioErr404.webErr(404, htmlFilePath)
             val errorMessage = "File tidak ditemukan di $htmlFilePath"
-            GachaStudioLogger.log("File $htmlFilePath tidak ditemukan!", iserror = true)
+            GachaStudioLogger.log("File $htmlFilePath tidak ditemukan!", isError = true)
             Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT).show()
             Log.e("GachaStudio", errorMessage)
         }
@@ -160,7 +160,7 @@ class GachaStudio : AppCompatActivity() {
 
     override fun onLowMemory() {
         super.onLowMemory()
-        GachaStudioLogger.log("Memori rendah dan penuh!, dadah aku menghilang...", iserror = true)
+        GachaStudioLogger.log("Memori rendah dan penuh!, dadah aku menghilang...", isError = true)
         Log.e("GachaStudio", "Memori rendah, log disimpan.")
     }
 
@@ -173,7 +173,7 @@ class GachaStudio : AppCompatActivity() {
         } else {
             super.onBackPressed()
             Log.i("GachaStudio", "Aplikasi keluar menggunakan tombol Back.")
-            GachaStudioLogger.log("Bye bye, Keluar menggunakan tombol kembali/esc", iserror = true)
+            GachaStudioLogger.log("Bye bye, Keluar menggunakan tombol kembali/esc", isError = true)
         }
     }
 }
