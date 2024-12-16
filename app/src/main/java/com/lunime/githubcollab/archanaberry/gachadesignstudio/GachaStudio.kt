@@ -1,5 +1,6 @@
 package com.lunime.githubcollab.archanaberry.gachadesignstudio
 
+import com.lunime.githubcollab.archanaberry.gachadesignstudio.weberror.GachaStudioErr404
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.ClipData
@@ -68,6 +69,38 @@ class GachaStudio : AppCompatActivity() {
         }
     }
 
+            // Set WebChromeClient untuk menangkap log dari console
+            webView.webChromeClient = object : WebChromeClient() {
+                override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
+                    // Ambil log dari console
+                    consoleMessage?.let {
+                        val message = it.message()
+                        val level = it.messageLevel()
+                        handleConsoleMessage(message, level)
+                    }
+                    return true
+                }
+            }
+        }
+    
+        private fun handleConsoleMessage(message: String, level: ConsoleMessage.MessageLevel) {
+            // Kirim log ke GachaStudioLogger
+            when (level) {
+                ConsoleMessage.MessageLevel.DEBUG -> {
+                    GachaStudioLogger.log("Debug: $message")
+                }
+                ConsoleMessage.MessageLevel.ERROR -> {
+                    GachaStudioLogger.log("Error: $message", isError = true)
+                }
+                ConsoleMessage.MessageLevel.LOG -> {
+                    GachaStudioLogger.log("Log: $message")
+                }
+                ConsoleMessage.MessageLevel.WARNING -> {
+                    GachaStudioLogger.log("Warning: $message", isError = true)
+                }
+            }
+        }
+
     private fun loadWebViewContent() {
         GachaStudioLogger.log("Menyetel tampilan konten web...")
         setUpWebView()
@@ -79,6 +112,7 @@ class GachaStudio : AppCompatActivity() {
         if (file.exists()) {
             webView.loadUrl("file:///$htmlFilePath")
         } else {
+            GachaStudioErr404.webErr(404, htmlFilePath)
             val errorMessage = "File tidak ditemukan di $htmlFilePath"
             GachaStudioLogger.log("File $htmlFilePath tidak ditemukan!", iserror = true)
             Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT).show()
