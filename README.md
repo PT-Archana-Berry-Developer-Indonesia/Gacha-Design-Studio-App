@@ -23,6 +23,7 @@ Game webview ini masih menimbulkan banyak bugs...
 | Fitur                     | Deskripsi                                                                                                        | Status |
 |---------------------------|------------------------------------------------------------------------------------------------------------------|--------|
 | Tampilan WebView          | Memuat game Gacha Design Studio menggunakan WebView di dalam aplikasi Android.                                  | ✅ |
+| Main Activity dan Webview terpisah              | GachaStudioMain (berguna sebagai loader sekaligus managing update resource) dengan GachaStudio (webview) dibuat terpisah agar lebih mudah dimaintain/mengurus jika terjadi suatu bug dan memungkinkan fullscreen activity.           | ✅ |
 | Pengecekan Update sumber daya melalui manifest         | Memuat resource game Gacha Design Studio menggunakan pembanding file manifest lokal dengan di rawgithub (membuat seolah olah menjadi API) untuk melakukan update baik aplikasi nya atau resource nya.                                | ❌ |
 | Alert Custom              | Menampilkan pesan alert khusus dengan judul besar dan pesan kecil, serta opsi untuk menyalin teks ke papan klip. | ✅ |
 | Navigasi Mundur           | Memungkinkan pengguna untuk mundur ke halaman sebelumnya saat menekan tombol kembali di perangkat Android.       | ✅ |
